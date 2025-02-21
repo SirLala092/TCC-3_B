@@ -1,0 +1,140 @@
+html:
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tetris</title>
+    <style>
+        body { text-align: center; background-color: black; color: white; font-family: Arial, sans-serif; }
+        canvas { background-color: white; display: block; margin: auto; }
+    </style>
+</head>
+<body>
+    <h1>Tetris</h1>
+    <canvas id="gameCanvas" width="300" height="600"></canvas>
+    <script src="index.js"></script>
+</body>
+</html>
+
+js:const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+const ROWS = 20;
+const COLS = 10;
+const BLOCK_SIZE = 30;
+const board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+
+const SHAPES = [
+    [[1, 1, 1, 1]], // I
+    [[1, 1], [1, 1]], // O
+    [[0, 1, 0], [1, 1, 1]], // T
+    [[1, 0, 0], [1, 1, 1]], // L
+    [[0, 0, 1], [1, 1, 1]], // J
+    [[0, 1, 1], [1, 1, 0]], // S
+    [[1, 1, 0], [0, 1, 1]], // Z
+    [[1], [1], [1], [1]], // I (vertical)
+    [[1, 0], [1, 0], [1, 1]] // L (vertical)
+];
+
+let piece = newPiece();
+let dropCounter = 0;
+let lastTime = 0;
+
+function newPiece() {
+    const shape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+    return { shape, x: 3, y: 0 };
+}
+
+function drawBoard() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    board.forEach((row, y) => {
+        row.forEach((cell, x) => {
+            if (cell) drawBlock(x, y, "gray");
+        });
+    });
+    drawPiece(piece);
+}
+
+function drawBlock(x, y, color) {
+    ctx.fillStyle = color;
+    ctx.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+    ctx.strokeStyle = "black";
+    ctx.strokeRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+}
+
+function drawPiece(p) {
+    p.shape.forEach((row, y) => {
+        row.forEach((cell, x) => {
+            if (cell) drawBlock(p.x + x, p.y + y, "white");
+        });
+    });
+}
+
+function movePiece(dx, dy) {
+    piece.x += dx;
+    piece.y += dy;
+    if (collision()) {
+        piece.x -= dx;
+        piece.y -= dy;
+        if (dy > 0) {
+            mergePiece();
+            piece = newPiece();
+            if (collision()) {
+                alert("Game Over");
+                resetGame();
+            }
+        }
+    }
+}
+
+function collision() {
+    return piece.shape.some((row, y) => 
+        row.some((cell, x) => 
+            cell && (board[piece.y + y]?.[piece.x + x] !== 0 || piece.y + y >= ROWS)));
+}
+
+function mergePiece() {
+    piece.shape.forEach((row, y) => {
+        row.forEach((cell, x) => {
+            if (cell) board[piece.y + y][piece.x + x] = 1;
+        });
+    });
+    clearLines();
+}
+
+function clearLines() {
+    for (let y = ROWS - 1; y >= 0; y--) {
+        if (board[y].every(cell => cell)) {
+            board.splice(y, 1);
+            board.unshift(Array(COLS).fill(0));
+            y++;
+        }
+    }
+}
+
+function update(time = 0) {
+    const deltaTime = time - lastTime;
+    lastTime = time;
+    dropCounter += deltaTime;
+    if (dropCounter > 500) {
+        movePiece(0, 1);
+        dropCounter = 0;
+    }
+    drawBoard();
+    requestAnimationFrame(update);
+}
+
+function resetGame() {
+    for (let y = 0; y < ROWS; y++) {
+        board[y].fill(0);
+    }
+    piece = newPiece();
+}
+
+document.addEventListener("keydown", (event) => {
+    if (event.key === "ArrowLeft") movePiece(-1, 0);
+    if (event.key === "ArrowRight") movePiece(1, 0);
+    if (event.key === "ArrowDown") movePiece(0, 1);
+});
+
+update();
