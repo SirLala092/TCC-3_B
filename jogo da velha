@@ -93,93 +93,79 @@
 
 
 
-<!DOCTYPE html>
-<html lang="pt">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jogo da Velha</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            color: #333;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-        }
+const cells = document.querySelectorAll('.cell');
+const statusText = document.getElementById('status');
+const restartButton = document.getElementById('restart');
 
-        h1 {
-            margin-bottom: 20px;
-        }
+let currentPlayer = 'X';
+let gameState = ['', '', '', '', '', '', '', '', ''];
+let gameActive = true;
 
-        #game-board {
-            display: grid;
-            grid-template-columns: repeat(3, 100px);
-            grid-template-rows: repeat(3, 100px);
-            gap: 5px;
-        }
+const winningConditions = [
+    [0, 1, 2], // Linha 1
+    [3, 4, 5], // Linha 2
+    [6, 7, 8], // Linha 3
+    [0, 3, 6], // Coluna 1
+    [1, 4, 7], // Coluna 2
+    [2, 5, 8], // Coluna 3
+    [0, 4, 8], // Diagonal 1
+    [2, 4, 6]  // Diagonal 2
+];
 
-        .cell {
-            width: 100px;
-            height: 100px;
-            background-color: #fff;
-            border: 2px solid #ccc;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 40px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
+function handleCellClick(event) {
+    const clickedCell = event.target;
+    const clickedCellIndex = parseInt(clickedCell.getAttribute('data-index'));
 
-        .cell:hover {
-            background-color: #f0f0f0;
-        }
+    if (gameState[clickedCellIndex] !== '' || !gameActive) {
+        return;
+    }
 
-        #status {
-            margin-top: 20px;
-            font-size: 20px;
-            font-weight: bold;
-        }
+    gameState[clickedCellIndex] = currentPlayer;
+    clickedCell.textContent = currentPlayer;
 
-        #restart {
-            margin-top: 20px;
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            background-color: #333;
-            color: #fff;
-            border: none;
-            border-radius: 5px;
-            transition: background-color 0.3s ease;
-        }
+    checkForWinner();
+}
 
-        #restart:hover {
-            background-color: #555;
-        }
-    </style>
-</head>
-<body>
-    <h1>Jogo da Velha</h1>
-    <div id="game-board">
-        <div class="cell" data-index="0"></div>
-        <div class="cell" data-index="1"></div>
-        <div class="cell" data-index="2"></div>
-        <div class="cell" data-index="3"></div>
-        <div class="cell" data-index="4"></div>
-        <div class="cell" data-index="5"></div>
-        <div class="cell" data-index="6"></div>
-        <div class="cell" data-index="7"></div>
-        <div class="cell" data-index="8"></div>
-    </div>
-    <div id="status"></div>
-    <button id="restart">Reiniciar Jogo</button>
+function checkForWinner() {
+    let roundWon = false;
 
-   
-       
-</body>
-</html>
+    for (let i = 0; i < winningConditions.length; i++) {
+        const [a, b, c] = winningConditions[i];
+        if (gameState[a] === '' || gameState[b] === '' || gameState[c] === '') {
+            continue;
+        }
+        if (gameState[a] === gameState[b] && gameState[b] === gameState[c]) {
+            roundWon = true;
+            break;
+        }
+    }
+
+    if (roundWon) {
+        statusText.textContent = `Jogador ${currentPlayer} venceu!`;
+        gameActive = false;
+        return;
+    }
+
+    if (!gameState.includes('')) {
+        statusText.textContent = 'Empate!';
+        gameActive = false;
+        return;
+    }
+
+    currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+    statusText.textContent = `Vez do jogador ${currentPlayer}`;
+}
+
+function restartGame() {
+    gameState = ['', '', '', '', '', '', '', '', ''];
+    gameActive = true;
+    currentPlayer = 'X';
+    statusText.textContent = `Vez do jogador ${currentPlayer}`;
+    cells.forEach(cell => cell.textContent = '');
+}
+
+cells.forEach(cell => cell.addEventListener('click', handleCellClick));
+restartButton.addEventListener('click', restartGame);
+
+statusText.textContent = `Vez do jogador ${currentPlayer}`;
+
